@@ -1,0 +1,45 @@
+{
+  "name": "coffee-shop-frontend",
+  "type": "module",
+  "version": "0.0.1",
+  "main": "src/electron/main.cjs",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "start": "node ./dist/server/entry.mjs",
+    "generate-api": "openapi -i swagger.json -o src/lib/generated",
+    "electron:dev": "cross-env NODE_ENV=development concurrently \"astro dev --host\" \"wait-on tcp:4321 && electron .\"",
+    "electron:start": "cross-env NODE_ENV=production npm run build && electron .",
+    "package": "npm run build && electron-packager . CoffeeShopApp --platform=win32 --arch=x64 --out=release-builds --overwrite"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.1.0",
+    "@astrojs/react": "^4.2.0",
+    "@astrojs/tailwind": "^6.0.0",
+    "@headlessui/react": "^2.2.0",
+    "@heroicons/react": "^2.2.0",
+    "@types/react": "^19.0.8",
+    "@types/recharts": "^1.8.29",
+    "astro": "^5.2.5",
+    "autoprefixer": "^10.4.20",
+    "axios": "^1.7.9",
+    "lucide-react": "^0.475.0",
+    "postcss": "^8.5.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.5",
+    "recharts": "^2.15.1",
+    "tailwindcss": "^3.4.17"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.2.0",
+    "electron-packager": "^17.1.2",
+    "openapi-typescript-codegen": "^0.29.0",
+    "rimraf": "^6.0.1",
+    "wait-on": "^7.2.0"
+  }
+}

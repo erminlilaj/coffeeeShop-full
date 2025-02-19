@@ -1,0 +1,23 @@
+---
+import LoginForm from '../components/auth/LoginForm';
+
+//make prerendering false
+export const prerender = false;
+// Check both localStorage token (client-side) and cookie token (server-side)
+const token = Astro.cookies.get('coffee_shop_token')?.value;
+if (token) {
+    return Astro.redirect('/');
+}
+---
+
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Login - Coffee Shop Management</title>
+    </head>
+    <body class="h-full">
+        <LoginForm client:load />
+    </body>
+</html>
