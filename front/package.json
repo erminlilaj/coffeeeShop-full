@@ -1,0 +1,31 @@
+{
+  "name": "coffee-shop-frontend",
+  "version": "0.0.1",
+  "author": "Your Name",
+  "main": "./src/electron/main.cjs",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "electron:start": "cross-env NODE_ENV=production npm run build && electron .",
+    "package": "npm run build && electron-packager --platform=win32 --arch=x64 --out=release-builds --overwrite --electron-version 34.2.0"
+  },
+  "devDependencies": {
+    "astro": "^5.3.0",
+    "cross-env": "^7.0.3"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.1.0",
+    "@astrojs/react": "^2.3.2",
+    "@astrojs/tailwind": "^6.0.0",
+    "@headlessui/react": "^2.2.0",
+    "@heroicons/react": "^2.2.0",
+    "@types/recharts": "^1.8.29",
+    "axios": "^1.7.9",
+    "electron": "^34.2.0",
+    "lucide-react": "^0.475.0",
+    "recharts": "^2.15.1",
+    "typescript": "^5.7.3"
+  },
+  "proxy": "http://localhost:8080"
+}
