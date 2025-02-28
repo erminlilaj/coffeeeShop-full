@@ -9,4 +9,6 @@ public class MsCoffeeShopApplication {
 		SpringApplication.run(MsCoffeeShopApplication.class, args);
 	}
 
+
+
 }

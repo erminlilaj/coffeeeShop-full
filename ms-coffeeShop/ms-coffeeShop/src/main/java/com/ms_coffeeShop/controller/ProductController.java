@@ -21,7 +21,6 @@ import static org.springframework.web.servlet.function.ServerResponse.status;
 @CrossOrigin
 public class ProductController {
 
-    private final ProductRepository productRepository;
 
     private final ProductService productService;
 
@@ -32,11 +31,13 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
 
     }
+
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
         List<Product> productList = productService.findAllProducts();
         return ResponseEntity.status(HttpStatus.OK).body(productList);
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         Product product = productService.getProductById(id);

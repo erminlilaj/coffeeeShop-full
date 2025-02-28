@@ -1,24 +1,26 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { XAxis, YAxis, BarChart, Bar, Tooltip, ResponsiveContainer }
-  from 'recharts';
-
-import {
-  getPurchases,
-  getSales,
-  getMonthlyStatistics,
-  getYearlyStatistics,
-} from "../../lib/api";
-import type {
-  PurchaseRecord,
-  SaleRecord,
-  MonthlyStatisticsDto,
-  YearlyStatisticsDTO,
-  PageResponse,
-} from "../../lib/types";
+import { getPurchases, getSales, getMonthlyStatistics, getYearlyStatistics } from "../../lib/api";
+import type { PurchaseRecord, SaleRecord, MonthlyStatisticsDto, YearlyStatisticsDTO, PageResponse } from "../../lib/types";
+import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const TransactionsHistory = () => {
-  // States for transactions
+  const today = new Date().toISOString().slice(0, 10);
+
+// First day of the current month
+  const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString()
+      .slice(0, 10);
+  console.log("First day of month", firstDayOfMonth);
+
+// Default to purchases from the first day of the current month to today
+  const [startDate, setStartDate] = useState(firstDayOfMonth);
+  const [endDate, setEndDate] = useState(today);
+
+  const [currentPagePurchases, setCurrentPagePurchases] = useState(0);
+  const [currentPageSales, setCurrentPageSales] = useState(0);
+
   const [purchases, setPurchases] = useState<PageResponse<PurchaseRecord>>({
     content: [],
     totalPages: 0,
@@ -28,6 +30,7 @@ const TransactionsHistory = () => {
     first: false,
     last: false,
   });
+
   const [sales, setSales] = useState<PageResponse<SaleRecord>>({
     content: [],
     totalPages: 0,
@@ -37,79 +40,72 @@ const TransactionsHistory = () => {
     first: false,
     last: false,
   });
-  const [currentPage, setCurrentPage] = useState(0);
 
+  const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7)
-  ); // YYYY-MM
-  const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear()
-  ); // YYYY
-
-  const albanianMonths = [
-    "Janar",
-    "Shkurt",
-    "Mars",
-    "Prill",
-    "Maj",
-    "Qershor",
-    "Korrik",
-    "Gusht",
-    "Shtator",
-    "Tetor",
-    "Nëntor",
-    "Dhjetor",
-  ];
-  // Function to get Albanian month name from YYYY-MM format
-  const getAlbanianMonth = (dateString: string) => {
-    const [year, month] = dateString.split("-");
-    return `${albanianMonths[Number(month) - 1]} ${year}`; // Convert month index (1-based) to 0-based
-  };
 
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStatisticsDto[]>([]);
   const [yearlyStats, setYearlyStats] = useState<YearlyStatisticsDTO[]>([]);
 
-  // viewMode can be 'monthly' or 'yearly'
-  const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
+  const [viewMode, setViewMode] = useState<"yearly" | "monthly">("monthly");
+  const [selectedType, setSelectedType] = useState<"purchases" | "sellings">("purchases");
 
-  // selectedType now only supports 'purchases' or 'sellings'
-  const [selectedType, setSelectedType] = useState<"purchases" | "sellings">(
-    "purchases"
-  );
+  useEffect(() => {
+    if (selectedType === "purchases") {
+      setCurrentPageSales(0); // Reset sales page when switching to purchases
+    } else if (selectedType === "sellings") {
+      setCurrentPagePurchases(0); // Reset purchases page when switching to sales
+    }
+  }, [selectedType]);
 
-  // Load statistics when the month/year, viewMode, or selectedType changes
+  // Load purchases from first day of the month until today when component mounts
+  useEffect(() => {
+    loadTransactions();
+    loadYearlyStatistics();
+  }, []);
+
+// Adjust startDate when switching to monthly view
   useEffect(() => {
     if (viewMode === "monthly") {
-      loadMonthlyStatistics();
-    } else if (viewMode === "yearly") {
-      loadYearlyStatistics();
+      setStartDate(firstDayOfMonth);
+      setEndDate(today);
     }
-  }, [selectedMonth, selectedYear, viewMode, selectedType]);
+  }, [viewMode]);
 
-  // Load transactions only if there are statistics to indicate transactions exist.
+// Reload transactions when startDate, endDate, type, or page changes
   useEffect(() => {
-    // For monthly view, if there are aggregated stats then load the transactions.
-    if (viewMode === "monthly" && monthlyStats.length > 0) {
+    if (startDate && endDate) {
       loadTransactions();
     }
-    // For yearly view, you might choose not to show the full transactions list.
-    // (Adjust this as needed. Here we only load transactions in monthly view.)
-  }, [currentPage, selectedMonth, monthlyStats, selectedType, viewMode]);
+  }, [startDate, endDate, selectedType, currentPage]);
+
+// Load monthly statistics when in monthly mode
+  useEffect(() => {
+    if (viewMode === "monthly") {
+      loadMonthlyStatistics(startDate, endDate);
+    }
+  }, [viewMode, startDate, endDate, selectedType]);
+
+  useEffect(() => {
+    loadYearlyStatistics();
+  }, [selectedType]);
 
   const loadTransactions = async () => {
     setError("");
+    setLoading(true);
+
     try {
-      setLoading(true);
       if (selectedType === "purchases") {
-        const data = await getPurchases(currentPage, 10, selectedMonth);
+        const data = await getPurchases(currentPage, 10, startDate,
+            endDate);
         setPurchases(data);
       } else {
-        const data = await getSales(currentPage, 10, selectedMonth);
+        const data = await getSales(currentPage, 10, startDate,
+            endDate);
         setSales(data);
       }
+
     } catch (err) {
       setError("Failed to load transactions");
       console.error("Error loading transactions:", err);
@@ -118,10 +114,13 @@ const TransactionsHistory = () => {
     }
   };
 
-  const loadMonthlyStatistics = async () => {
+  const loadMonthlyStatistics = async (startDate: string, endDate: string) => {
+    setError("");
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const data = await getMonthlyStatistics(selectedMonth, selectedType);
+      const data = await getMonthlyStatistics(startDate, endDate,
+          selectedType);
       setMonthlyStats(data);
     } catch (err) {
       setError("Failed to load monthly statistics");
@@ -134,7 +133,8 @@ const TransactionsHistory = () => {
   const loadYearlyStatistics = async () => {
     try {
       setLoading(true);
-      const data = await getYearlyStatistics(selectedYear, selectedType);
+      const year = new Date().getFullYear(); // Use the current year if no year is selected
+      const data = await getYearlyStatistics(year, selectedType);
       setYearlyStats(data);
     } catch (err) {
       setError("Failed to load yearly statistics");
@@ -143,48 +143,62 @@ const TransactionsHistory = () => {
       setLoading(false);
     }
   };
+
   const statsData = viewMode === "monthly" ? monthlyStats : yearlyStats;
   const [statView, setStatView] = useState<"simple" | "graph">("simple");
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
-  // @ts-ignore
-  // @ts-ignore
-  // @ts-ignore
-  // @ts-ignore
-  return (
-    <div className="bg-white shadow-sm rounded-lg">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-4">
-            {viewMode === "monthly" && (
-              <div className="relative">
-                {/* The actual input */}
-                {selectedMonth && (
-                  <div className="mt-1 text-l text-gray-600">
-                    {getAlbanianMonth(selectedMonth)}
-                  </div>
-                )}
-                <input
-                  type="month"
-                  value={selectedMonth} // Keep it as "YYYY-MM"
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-            )}
 
-            {viewMode === "yearly" && (
-              <input
-                type="number"
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-24"
-              />
-            )}
-          </div>
+
+  return (
+      <div className="bg-white shadow-sm rounded-lg">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex space-x-4">
+              {viewMode === "monthly" && (
+                  <div className="relative">
+                    {/* The actual input for date range */}
+                    <div className="flex flex-col">
+                      <label className="mb-1 font-extrabold">
+                        Dita fillestare
+                      </label>
+
+                      <input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500
+                          focus:ring-indigo-500 mb-6"
+                      />
+
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="mb-1 font-extrabold">
+                        Dita perfundimtare
+                      </label>
+
+                      <input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+              )}
+
+              {viewMode === "yearly" && (
+                  <input
+                      type="number"
+                      value={new Date().getFullYear()} // Default to the current year
+                      onChange={(e) => loadYearlyStatistics()} // Trigger the API call on change
+                      className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 w-24"
+                  />
+              )}
+            </div>
           <div className="flex space-x-4">
             <label>
               <input
@@ -194,7 +208,7 @@ const TransactionsHistory = () => {
                 onChange={() => setViewMode("monthly")}
                 className="mr-2"
               />
-              Mujore
+              Periudhe
             </label>
             <label>
               <input
@@ -254,76 +268,103 @@ const TransactionsHistory = () => {
         </label>
       </div>
 
-      {/* Statistics Section */}
-      {statView === "simple" && viewMode === "monthly" && (
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="text-xl font-bold mb-2">Statistika Mujore</h3>
-          {monthlyStats.length > 0 ? (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Produkti
-                  </th>
-                  {selectedType === "purchases" && (
-                    <>
+        {/* Statistics Section */}
+        {statView === "simple" && viewMode === "monthly" && (
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-xl font-bold mb-2">Statistikat</h3>
+              {monthlyStats.length > 0 ? (
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                    <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Totali i Blerjes
+                        Produkti
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Totali i Shpenzimeve
-                      </th>
-                    </>
-                  )}
-                  {selectedType === "sellings" && (
-                    <>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Totali i Shitjeve
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Totali i Xhiros
-                      </th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {monthlyStats.map((stat) => (
-                  <tr key={stat.productName}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {stat.productName}
-                    </td>
-                    {selectedType === "purchases" && (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {stat.totalBought}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          Lek &nbsp;
-                          {stat.totalSpent.toFixed(2)}
-                        </td>
-                      </>
-                    )}
-                    {selectedType === "sellings" && (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {stat.totalSold}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          Lek &nbsp;
-                          {stat.totalRevenue.toFixed(2)}
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-gray-500">No transactions for this month</div>
-          )}
-        </div>
-      )}
+                      {selectedType === "purchases" && (
+                          <>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Totali i Blerjes
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Totali i Shpenzimeve
+                            </th>
+                          </>
+                      )}
+                      {selectedType === "sellings" && (
+                          <>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Totali i Shitjeve
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Totali i Xhiros
+                            </th>
+                          </>
+                      )}
+                    </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                    {monthlyStats.map((stat) => (
+                        <tr key={stat.productName}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {stat.productName}
+                          </td>
+                          {selectedType === "purchases" && (
+                              <>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {stat.totalBought}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  Lek &nbsp;{stat.totalSpent.toFixed(2)}
+                                </td>
+                              </>
+                          )}
+                          {selectedType === "sellings" && (
+                              <>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {stat.totalSold}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  Lek &nbsp;{stat.totalRevenue.toFixed(2)}
+                                </td>
+                              </>
+                          )}
+                        </tr>
+                    ))}
+                    </tbody>
+                    <tfoot>
+                    <tr className="font-bold">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Shuma</td>
+                      {selectedType === "purchases" && (
+                          <>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {monthlyStats.reduce((sum, stat) => sum + stat.totalBought, 0)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              Lek &nbsp;
+                              {monthlyStats.reduce((sum, stat) => sum + stat.totalSpent, 0).toFixed(2)}
+                            </td>
+                          </>
+                      )}
+                      {selectedType === "sellings" && (
+                          <>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {monthlyStats.reduce((sum, stat) => sum + stat.totalSold, 0)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              Lek &nbsp;
+                              {monthlyStats.reduce((sum, stat) => sum + stat.totalRevenue, 0).toFixed(2)}
+                            </td>
+                          </>
+                      )}
+                    </tr>
+                    </tfoot>
+                  </table>
+              ) : (
+                  <div className="text-gray-500">No transactions for this month</div>
+              )}
+            </div>
+
+
+        )}
       {statView === "graph" && (
         <div className="p-4 border-b border-gray-200">
           <h3 className="text-xl font-bold mb-2">
@@ -427,6 +468,7 @@ const TransactionsHistory = () => {
 
       {/* Transactions Table (only shown if statistics indicate there are transactions) */}
       {viewMode === "monthly" && monthlyStats.length > 0 && (
+
         <div className="p-4">
           <h3 className="text-xl font-bold mb-2">
             {selectedType === "purchases" ? "Blerjet" : "Shitjet"}
@@ -515,21 +557,21 @@ const TransactionsHistory = () => {
                       aria-label="Pagination"
                     >
                       <button
-                        onClick={() =>
-                          setCurrentPage((curr) => Math.max(0, curr - 1))
-                        }
-                        disabled={currentPage === 0}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                          onClick={() => setCurrentPage((curr) => Math.max(0, curr - 1))}
+                          disabled={currentPage === 0}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                       >
-                        Pas
+                        <ChevronLeft className="w-5 h-5" />
                       </button>
+
                       <button
-                        onClick={() => setCurrentPage((curr) => curr + 1)}
-                        disabled={currentPage >= purchases.totalPages - 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                          onClick={() => setCurrentPage((curr) => curr + 1)}
+                          disabled={currentPage >= purchases.totalPages - 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                       >
-                        Para
+                        <ChevronRight className="w-5 h-5" />
                       </button>
+
                     </nav>
                   </div>
                 </div>
@@ -590,18 +632,18 @@ const TransactionsHistory = () => {
               <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
-                    onClick={() =>
-                      setCurrentPage((curr) => Math.max(0, curr - 1))
-                    }
-                    disabled={currentPage === 0}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                      onClick={() =>
+                          setCurrentPage((curr) => Math.max(0, curr - 1))
+                      }
+                      disabled={currentPage === 0}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                   >
                     Pas
                   </button>
                   <button
-                    onClick={() => setCurrentPage((curr) => curr + 1)}
-                    disabled={currentPage >= sales.totalPages - 1}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                      onClick={() => setCurrentPage((curr) => curr + 1)}
+                      disabled={currentPage >= sales.totalPages - 1}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                   >
                     Para
                   </button>
@@ -616,29 +658,30 @@ const TransactionsHistory = () => {
                   </div>
                   <div>
                     <nav
-                      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                      aria-label="Pagination"
+                        className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                        aria-label="Pagination"
                     >
                       <button
-                        onClick={() =>
-                          setCurrentPage((curr) => Math.max(0, curr - 1))
-                        }
-                        disabled={currentPage === 0}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                          onClick={() => setCurrentPage((curr) => Math.max(0, curr - 1))}
+                          disabled={currentPage === 0}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                       >
-                        Pas
+                        <ChevronLeft className="w-5 h-5" />
                       </button>
+
                       <button
-                        onClick={() => setCurrentPage((curr) => curr + 1)}
-                        disabled={currentPage >= sales.totalPages - 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                          onClick={() => setCurrentPage((curr) => curr + 1)}
+                          disabled={currentPage >= sales.totalPages - 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                       >
-                        Para
+                        <ChevronRight className="w-5 h-5" />
                       </button>
                     </nav>
                   </div>
                 </div>
               </div>
+
+
             </>
           )}
         </div>

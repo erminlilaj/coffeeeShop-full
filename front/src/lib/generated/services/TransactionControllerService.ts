@@ -87,30 +87,39 @@ export class TransactionControllerService {
     public static getAllPurchases(
         page?: number,
         size: number = 10,
+        startDate?: string,  // Optional startDate in ISO format (e.g., "2025-01-01")
+        endDate?: string     // Optional endDate in ISO format (e.g., "2025-01-31")
     ): CancelablePromise<PagePurchases> {
+        console.log("END DATE IS",endDate);
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/transactions/purchases',
             query: {
                 'page': page,
                 'size': size,
+                'startDate': startDate,  // Pass startDate if provided
+                'endDate': endDate,      // Pass endDate if provided
             },
         });
     }
+
     /**
      * @param month
      * @returns MonthlyStatisticsDto OK
      * @throws ApiError
      */
     public static getMonthlyStatistics(
-        month: string,
+        startDate: string,
+        endDate: string,
     ): CancelablePromise<Array<MonthlyStatisticsDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/transactions/monthlyStatistics',
             query: {
-                'month': month,
+                'startDate': startDate,
+                'endDate': endDate,
             },
         });
     }
+
 }
