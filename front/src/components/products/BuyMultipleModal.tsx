@@ -2,18 +2,18 @@ import * as React from "react";
 import { useState, Fragment, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { XMarkIcon as X } from "@heroicons/react/24/outline";
-import { createPurchase } from "../../lib/api";
-import { BuyMultipleModalProps } from "../../lib/generated/models/BuyMultipleModalProps";
+import { SellMultipleModalProps } from "../../lib/generated/models/SellMultipleModalProps";
+import { createSale } from "../../lib/api";
 
-const BuyMultipleModal: React.FC<BuyMultipleModalProps> = ({
+const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
   isOpen,
   onClose,
   selectedProducts,
-  onPurchaseComplete,
+  onSellComplete,
 }) => {
   const getCurrentDate = () => new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-  const getCurrentTime = () =>
-    new Date().toTimeString().split(":").slice(0, 2).join(":"); // HH:MM
+
+  const [saleDate, setSaleDate] = useState(getCurrentDate());
   const [updatedProducts, setUpdatedProducts] = useState(
     selectedProducts.map((product) => ({
       ...product,
@@ -23,8 +23,6 @@ const BuyMultipleModal: React.FC<BuyMultipleModalProps> = ({
     }))
   );
 
-  const [purchaseDate, setPurchaseDate] = useState(getCurrentDate());
-  const [purchaseTime, setPurchaseTime] = useState(getCurrentTime());
   useEffect(() => {
     setUpdatedProducts(
       selectedProducts.map((product) => ({
@@ -34,6 +32,7 @@ const BuyMultipleModal: React.FC<BuyMultipleModalProps> = ({
         error: "",
       }))
     );
+    setSaleDate(getCurrentDate());
   }, [selectedProducts]);
 
   const handleQuantityChange = (id: number, value: string) => {
@@ -50,33 +49,30 @@ const BuyMultipleModal: React.FC<BuyMultipleModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUpdatedProducts(
-      (prev) => prev.map((item) => ({ ...item, error: "" })) // Reset errors
-    );
+    setUpdatedProducts((prev) => prev.map((item) => ({ ...item, error: "" })));
 
     try {
       for (const product of updatedProducts) {
         if (!product || parseInt(product.quantity) <= 0) {
-          throw new Error("Invalid quantity");
+          throw new Error("Sasia është e pavlefshme");
         }
-        await createPurchase({
+        await createSale({
           productId: product.id,
           quantity: parseInt(product.quantity),
           price: parseFloat(product.price),
-          transactionDate: new Date().toISOString().split("T")[0],
+          transactionDate: saleDate,
         });
       }
-
-      onPurchaseComplete();
+      onSellComplete();
       handleClose();
     } catch (error) {
       setUpdatedProducts((prev) =>
         prev.map((item) => ({
           ...item,
-          error: "Purchase failed. Please try again.",
+          error: "Shitja deshtoi. Ju lutem provoni perseri.",
         }))
       );
-      console.error("Error in purchase:", error);
+      console.error("Error in sale:", error);
     }
   };
 
@@ -89,6 +85,7 @@ const BuyMultipleModal: React.FC<BuyMultipleModalProps> = ({
         error: "",
       }))
     );
+    setSaleDate(getCurrentDate());
     onClose();
   };
 
@@ -131,113 +128,118 @@ const BuyMultipleModal: React.FC<BuyMultipleModalProps> = ({
                 </button>
               </div>
 
-              <div className="text-center sm:text-left w-full">
-                <Dialog.Title className="text-lg font-semibold text-gray-900">
-                  Bli produktet
-                </Dialog.Title>
+              <div className="sm:flex sm:items-start">
+                <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                  <Dialog.Title className="text-lg font-semibold text-gray-900">
+                    Shit Produktet
+                  </Dialog.Title>
 
-                <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-                  {updatedProducts.map((product) => (
-                    <div key={product.id}>
-                      <div className="font-medium text-gray-700">
-                        {product.name}
-                      </div>
+                  <div className="mt-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      {/* Scrollable container for products and date */}
+                      <div className="mt-4 h-[400px] overflow-y-auto">
+                        {updatedProducts.map((product) => (
+                          <div key={product.id}>
+                            <div className="font-medium text-gray-700">
+                              {product.name}
+                            </div>
 
-                      <label className="block text-sm font-medium text-gray-700">
-                        Sasia
-                      </label>
-                      <input
-                        type="number"
-                        value={product.quantity}
-                        onChange={(e) =>
-                          handleQuantityChange(product.id, e.target.value)
-                        }
-                        className="mt-1 w-full rounded-lg border p-2"
-                        min="1"
-                        required
-                      />
+                            <div>
+                              <label
+                                htmlFor={`quantity-${product.id}`}
+                                className="block text-sm font-medium text-gray-700"
+                              >
+                                Sasia
+                              </label>
+                              <input
+                                type="number"
+                                id={`quantity-${product.id}`}
+                                value={product.quantity}
+                                onChange={(e) =>
+                                  handleQuantityChange(product.id, e.target.value)
+                                }
+                                className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                min="1"
+                                required
+                              />
+                            </div>
 
-                      <label className="block text-sm font-medium text-gray-700">
-                        Çmimi për njësi (lek)
-                      </label>
-                      <input
-                        type="number"
-                        value={product.price}
-                        onChange={(e) =>
-                          handlePriceChange(product.id, e.target.value)
-                        }
-                        className="mt-1 w-full rounded-lg border p-2"
-                        min="0"
-                        step="1"
-                        required
-                      />
+                            <div>
+                              <label
+                                htmlFor={`price-${product.id}`}
+                                className="block text-sm font-medium text-gray-700"
+                              >
+                                Çmimi për njësi (lek)
+                              </label>
+                              <input
+                                type="number"
+                                id={`price-${product.id}`}
+                                value={product.price}
+                                onChange={(e) =>
+                                  handlePriceChange(product.id, e.target.value)
+                                }
+                                className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                min="0"
+                                step="1"
+                                required
+                              />
+                            </div>
 
-                      <div className="mt-2 text-sm text-gray-600">
-                        Totali:{" "}
-                        {(
-                          parseFloat(product.price) * parseInt(product.quantity)
-                        ).toFixed(2)}{" "}
-                        lek
-                      </div>
+                            <div className="mt-2 text-sm text-gray-600">
+                              Totali i shitjes:{" "}
+                              {(
+                                parseFloat(product.price) *
+                                parseInt(product.quantity)
+                              ).toFixed(2)}{" "}
+                              lek
+                            </div>
 
-                      {product.error && (
-                        <div className="text-sm text-red-500">
-                          {product.error}
+                            {product.error && (
+                              <div className="text-sm text-red-500">
+                                {product.error}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Sale Date Field (INSIDE SCROLL CONTAINER) */}
+                        <div>
+                          <label
+                            htmlFor="saleDate"
+                            className="block text-sm font-medium text-gray-700"
+                          >
+                            Data e shitjes
+                          </label>
+                          <input
+                            type="date"
+                            id="saleDate"
+                            value={saleDate}
+                            onChange={(e) => setSaleDate(e.target.value)}
+                            className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            required
+                          />
                         </div>
-                      )}
-                    </div>
-                  ))}
-                  <div>
-                    <label
-                      htmlFor="purchaseDate"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Data e blerjes
-                    </label>
-                    <input
-                      type="date"
-                      id="purchaseDate"
-                      value={purchaseDate}
-                      onChange={(e) => setPurchaseDate(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      required
-                    />
-                  </div>
+                      </div>
 
-                  {/* Time Field */}
-                  <div>
-                    <label
-                      htmlFor="purchaseTime"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Koha e blerjes
-                    </label>
-                    <input
-                      type="time"
-                      id="purchaseTime"
-                      value={purchaseTime}
-                      onChange={(e) => setPurchaseTime(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      required
-                    />
+                      {/* Buttons (OUTSIDE SCROLL CONTAINER) */}
+                      <div className="mt-5 flex justify-end gap-3">
+                        <button
+                          type="button"
+                          className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+                          onClick={handleClose}
+                        >
+                          Anullo
+                        </button>
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-500"
+                        >
+                          Konfirmo shitjen
+                        </button>
+                      </div>
+                    </form>
                   </div>
-
-                  <div className="mt-5 flex justify-end gap-3">
-                    <button
-                      type="button"
-                      className="rounded-lg bg-gray-200 px-4 py-2"
-                      onClick={handleClose}
-                    >
-                      Anullo
-                    </button>
-                    <button
-                      type="submit"
-                      className="rounded-lg bg-indigo-600 px-4 py-2 text-white"
-                    >
-                      Konfirmo blerjen
-                    </button>
-                  </div>
-                </form>
+                </div>
               </div>
             </Dialog.Panel>
           </Transition.Child>
@@ -247,4 +249,4 @@ const BuyMultipleModal: React.FC<BuyMultipleModalProps> = ({
   );
 };
 
-export default BuyMultipleModal;
+export default SellMultipleModal;

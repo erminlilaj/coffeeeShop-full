@@ -143,93 +143,96 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
 
                   <div className="mt-4">
                     <form onSubmit={handleSubmit} className="space-y-4">
-                      {updatedProducts.map((product) => (
-                        <div key={product.id}>
-                          <div className="font-medium text-gray-700">
-                            {product.name}
-                          </div>
-
-                          {/* Quantity Input */}
-                          <div>
-                            <label
-                              htmlFor={`quantity-${product.id}`}
-                              className="block text-sm font-medium text-gray-700"
-                            >
-                              Sasia
-                            </label>
-                            <input
-                              type="number"
-                              id={`quantity-${product.id}`}
-                              value={product.quantity}
-                              onChange={(e) =>
-                                handleQuantityChange(product.id, e.target.value)
-                              }
-                              className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                              min="1"
-                              required
-                            />
-                          </div>
-
-                          {/* Price Input */}
-                          <div>
-                            <label
-                              htmlFor={`price-${product.id}`}
-                              className="block text-sm font-medium text-gray-700"
-                            >
-                              Çmimi për njësi (lek)
-                            </label>
-                            <input
-                              type="number"
-                              id={`price-${product.id}`}
-                              value={product.price}
-                              onChange={(e) =>
-                                handlePriceChange(product.id, e.target.value)
-                              }
-                              className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                              min="0"
-                              step="1"
-                              required
-                            />
-                          </div>
-
-                          {/* Total Price Calculation */}
-                          <div className="mt-2 text-sm text-gray-600">
-                            Totali i shitjes:{" "}
-                            {(
-                              parseFloat(product.price) *
-                              parseInt(product.quantity)
-                            ).toFixed(2)}{" "}
-                            lek
-                          </div>
-
-                          {/* Error Message */}
-                          {product.error && (
-                            <div className="text-sm text-red-500">
-                              {product.error}
+                      {/* Scrollable container for products and date */}
+                      <div className="mt-4 h-[400px] overflow-y-auto">
+                        {updatedProducts.map((product) => (
+                          <div key={product.id}>
+                            <div className="font-medium text-gray-700">
+                              {product.name}
                             </div>
-                          )}
-                        </div>
-                      ))}
 
-                      {/* Date Field */}
-                      <div>
-                        <label
-                          htmlFor="saleDate"
-                          className="block text-sm font-medium text-gray-700"
-                        >
-                          Data e shitjes
-                        </label>
-                        <input
-                          type="date"
-                          id="saleDate"
-                          value={saleDate}
-                          onChange={(e) => setSaleDate(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                          required
-                        />
+                            {/* Quantity Input */}
+                            <div>
+                              <label
+                                htmlFor={`quantity-${product.id}`}
+                                className="block text-sm font-medium text-gray-700"
+                              >
+                                Sasia
+                              </label>
+                              <input
+                                type="number"
+                                id={`quantity-${product.id}`}
+                                value={product.quantity}
+                                onChange={(e) =>
+                                  handleQuantityChange(product.id, e.target.value)
+                                }
+                                className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                min="1"
+                                required
+                              />
+                            </div>
+
+                            {/* Price Input */}
+                            <div>
+                              <label
+                                htmlFor={`price-${product.id}`}
+                                className="block text-sm font-medium text-gray-700"
+                              >
+                                Çmimi për njësi (lek)
+                              </label>
+                              <input
+                                type="number"
+                                id={`price-${product.id}`}
+                                value={product.price}
+                                onChange={(e) =>
+                                  handlePriceChange(product.id, e.target.value)
+                                }
+                                className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                min="0"
+                                step="1"
+                                required
+                              />
+                            </div>
+
+                            {/* Total Price Calculation */}
+                            <div className="mt-2 text-sm text-gray-600">
+                              Totali i shitjes:{" "}
+                              {(
+                                parseFloat(product.price) *
+                                parseInt(product.quantity)
+                              ).toFixed(2)}{" "}
+                              lek
+                            </div>
+
+                            {/* Error Message */}
+                            {product.error && (
+                              <div className="text-sm text-red-500">
+                                {product.error}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Date Field (INSIDE SCROLL CONTAINER) */}
+                        <div>
+                          <label
+                            htmlFor="saleDate"
+                            className="block text-sm font-medium text-gray-700"
+                          >
+                            Data e shitjes
+                          </label>
+                          <input
+                            type="date"
+                            id="saleDate"
+                            value={saleDate}
+                            onChange={(e) => setSaleDate(e.target.value)}
+                            className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            required
+                          />
+                        </div>
                       </div>
 
-                      {/* Buttons */}
+                      {/* Buttons (OUTSIDE SCROLL CONTAINER) */}
                       <div className="mt-5 flex justify-end gap-3">
                         <button
                           type="button"

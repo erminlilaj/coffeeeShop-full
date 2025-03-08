@@ -84,6 +84,19 @@ const ProductTable: React.FC = () => {
         }
     };
 
+    const handleBuyMultiple = async () => {
+        if (selectedProducts.length === 0) {
+            alert("Please select at least one product.");
+            return;
+        }
+        
+        // No need for API call here as it's handled in the modal
+        // Just reload products after the modal handles the purchases
+        loadProducts();
+        
+        // Reset the selected products
+        setSelectedProducts([]);
+    };
 
     return (
         <div className="bg-white shadow-sm rounded-lg">
@@ -230,9 +243,8 @@ const ProductTable: React.FC = () => {
             <BuyMultipleModal
                 isOpen={isBuyMultipleModalOpen}
                 onClose={() => setIsBuyMultipleModalOpen(false)}
-                selectedProducts={selectedProducts} //rregulloje kt me backun*****
-                onPurchaseComplete={handleSellMultiple} //rregulloje kt me backun*****
-                onSellComplete={loadProducts}
+                selectedProducts={selectedProducts}
+                onPurchaseComplete={loadProducts}
             />
         </div>
     );

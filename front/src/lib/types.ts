@@ -2,12 +2,12 @@ export interface Product {
     id: number;
     name: string;
     currentStock: number;
-    lastBoughtPrice: number | null;
-    lastSoldPrice: number | null;
+    lastBoughtPrice?: number | null;
+    lastSoldPrice?: number | null;
 }
 
 export interface Transaction {
-    productId: number;
+    productId?: number;
     quantity: number;
     price: number;
     transactionDate: string;

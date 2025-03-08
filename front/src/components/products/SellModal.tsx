@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { XMarkIcon as X } from "@heroicons/react/24/outline";
 import type { Product } from "../../lib/types";
@@ -21,9 +21,20 @@ const SellModal: React.FC<SellModalProps> = ({
   const getCurrentDate = () => new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
   const [quantity, setQuantity] = useState("1");
-  const [price, setPrice] = useState(product?.lastSoldPrice?.toString() || "0");
+  const [price, setPrice] = useState("0");
   const [saleDate, setSaleDate] = useState(getCurrentDate());
   const [error, setError] = useState("");
+
+  // Update price when product.lastSoldPrice changes
+  useEffect(() => {
+    if (product) {
+      setPrice(product.lastSoldPrice?.toString() || "0");
+    }
+  }, [product?.lastSoldPrice]);
+
+  useEffect(() => {
+    setSaleDate(getCurrentDate());
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +46,7 @@ const SellModal: React.FC<SellModalProps> = ({
         productId: product.id,
         quantity: parseInt(quantity),
         price: parseFloat(price),
-        transactionDate: saleDate, // Send saleDate to API
+        transactionDate: saleDate,
       });
 
       onSellComplete();
@@ -48,7 +59,6 @@ const SellModal: React.FC<SellModalProps> = ({
 
   const handleClose = () => {
     setQuantity("1");
-    setPrice(product?.lastSoldPrice?.toString() || "0");
     setSaleDate(getCurrentDate());
     setError("");
     onClose();

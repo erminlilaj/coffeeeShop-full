@@ -1,4 +1,4 @@
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import * as React from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { X } from "lucide-react";
@@ -18,15 +18,30 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
   product,
   onPurchaseComplete,
 }) => {
-  const getCurrentDate = () => new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-  const getCurrentTime = () =>
-    new Date().toTimeString().split(":").slice(0, 2).join(":"); // HH:MM
+  const getCurrentDate = () => new Date().toISOString().split("T")[0];
+  const getCurrentTime = () => 
+    new Date().toTimeString().split(":").slice(0, 2).join(":");
 
   const [quantity, setQuantity] = useState("1");
-  const [price, setPrice] = useState(product?.lastBoughtPrice?.toString() || "0");
+  const [price, setPrice] = useState("0"); // Initialize with default
   const [purchaseDate, setPurchaseDate] = useState(getCurrentDate());
   const [purchaseTime, setPurchaseTime] = useState(getCurrentTime());
   const [error, setError] = useState("");
+
+  // Sync price with product.lastBoughtPrice
+  useEffect(() => {
+    if (product) {
+      setPrice(product.lastBoughtPrice?.toString() || "0");
+    }
+  }, [product?.lastBoughtPrice]);
+
+  // Reset date/time when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setPurchaseDate(getCurrentDate());
+      setPurchaseTime(getCurrentTime());
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +53,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
         productId: product.id,
         quantity: parseInt(quantity),
         price: parseFloat(price),
-        transactionDate: `${purchaseDate} ${purchaseTime}`, // Store Date and Time together
+        transactionDate: purchaseDate,
       });
 
       onPurchaseComplete();
@@ -51,7 +66,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
   const handleClose = () => {
     setQuantity("1");
-    setPrice(product?.lastBoughtPrice?.toString() || "0");
     setPurchaseDate(getCurrentDate());
     setPurchaseTime(getCurrentTime());
     setError("");
@@ -104,7 +118,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
                 <div className="mt-4">
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Quantity Input */}
                     <div>
                       <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
                         Sasia
@@ -120,7 +133,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                       />
                     </div>
 
-                    {/* Price Input */}
                     <div>
                       <label htmlFor="price" className="block text-sm font-medium text-gray-700">
                         Çmimi për njësi (lek)
@@ -137,7 +149,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                       />
                     </div>
 
-                    {/* Date Field */}
                     <div>
                       <label htmlFor="purchaseDate" className="block text-sm font-medium text-gray-700">
                         Data e blerjes
@@ -152,7 +163,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                       />
                     </div>
 
-                    {/* Time Field */}
                     <div>
                       <label htmlFor="purchaseTime" className="block text-sm font-medium text-gray-700">
                         Koha e blerjes
@@ -167,17 +177,14 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                       />
                     </div>
 
-                    {/* Total Price Calculation */}
                     <div className="mt-2 text-sm text-gray-600">
                       Çmimi total:{" "}
                       {(parseFloat(price) * parseInt(quantity || "0")).toFixed(2)}{" "}
                       lek
                     </div>
 
-                    {/* Error Message */}
                     {error && <div className="text-sm text-red-500">{error}</div>}
 
-                    {/* Buttons */}
                     <div className="mt-5 flex justify-end gap-3">
                       <button
                         type="button"
