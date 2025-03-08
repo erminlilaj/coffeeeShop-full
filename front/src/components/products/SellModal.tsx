@@ -18,8 +18,11 @@ const SellModal: React.FC<SellModalProps> = ({
   product,
   onSellComplete,
 }) => {
+  const getCurrentDate = () => new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
   const [quantity, setQuantity] = useState("1");
   const [price, setPrice] = useState(product?.lastSoldPrice?.toString() || "0");
+  const [saleDate, setSaleDate] = useState(getCurrentDate());
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,7 +35,7 @@ const SellModal: React.FC<SellModalProps> = ({
         productId: product.id,
         quantity: parseInt(quantity),
         price: parseFloat(price),
-        transactionDate: new Date().toISOString().split("T")[0],
+        transactionDate: saleDate, // Send saleDate to API
       });
 
       onSellComplete();
@@ -46,6 +49,7 @@ const SellModal: React.FC<SellModalProps> = ({
   const handleClose = () => {
     setQuantity("1");
     setPrice(product?.lastSoldPrice?.toString() || "0");
+    setSaleDate(getCurrentDate());
     setError("");
     onClose();
   };
@@ -68,19 +72,6 @@ const SellModal: React.FC<SellModalProps> = ({
         </Transition.Child>
 
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-          {/* Overlay without blur */}
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-50" />
-          </Transition.Child>
-
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -104,88 +95,101 @@ const SellModal: React.FC<SellModalProps> = ({
               </div>
 
               {/* Modal Content */}
-              <div className="sm:flex sm:items-start">
-                <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-lg font-semibold leading-6 text-gray-900"
-                  >
-                    Shit {product.name}
-                  </Dialog.Title>
+              <div className="text-center sm:text-left w-full">
+                <Dialog.Title className="text-lg font-semibold text-gray-900">
+                  Shit {product.name}
+                </Dialog.Title>
 
-                  <div className="mt-4">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      {/* Quantity Input */}
-                      <div>
-                        <label
-                          htmlFor="quantity"
-                          className="block text-sm font-medium text-gray-700"
-                        >
-                          Sasia
-                        </label>
-                        <input
-                          type="number"
-                          id="quantity"
-                          value={quantity}
-                          onChange={(e) => setQuantity(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                          min="1"
-                          required
-                        />
-                      </div>
+                <div className="mt-4">
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Quantity Input */}
+                    <div>
+                      <label
+                        htmlFor="quantity"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Sasia
+                      </label>
+                      <input
+                        type="number"
+                        id="quantity"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        min="1"
+                        required
+                      />
+                    </div>
 
-                      {/* Price Input */}
-                      <div>
-                        <label
-                          htmlFor="price"
-                          className="block text-sm font-medium text-gray-700"
-                        >
-                          Çmimi për njësi (lek)
-                        </label>
-                        <input
-                          type="number"
-                          id="price"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                          min="0"
-                          step="1"
-                          required
-                        />
-                      </div>
+                    {/* Price Input */}
+                    <div>
+                      <label
+                        htmlFor="price"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Çmimi për njësi (lek)
+                      </label>
+                      <input
+                        type="number"
+                        id="price"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        min="0"
+                        step="1"
+                        required
+                      />
+                    </div>
 
-                      {/* Total Price Calculation */}
-                      <div className="mt-2 text-sm text-gray-600">
-                        Totali i shitjes:{" "}
-                        {(
-                          parseFloat(price) * parseInt(quantity || "0")
-                        ).toFixed(2)}{" "}
-                        lek
-                      </div>
+                    {/* Date Field */}
+                    <div>
+                      <label
+                        htmlFor="saleDate"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Data e shitjes
+                      </label>
+                      <input
+                        type="date"
+                        id="saleDate"
+                        value={saleDate}
+                        onChange={(e) => setSaleDate(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        required
+                      />
+                    </div>
 
-                      {/* Error Message */}
-                      {error && (
-                        <div className="text-sm text-red-500">{error}</div>
-                      )}
+                    {/* Total Price Calculation */}
+                    <div className="mt-2 text-sm text-gray-600">
+                      Totali i shitjes:{" "}
+                      {(parseFloat(price) * parseInt(quantity || "0")).toFixed(
+                        2
+                      )}{" "}
+                      lek
+                    </div>
 
-                      {/* Buttons */}
-                      <div className="mt-5 flex justify-end gap-3">
-                        <button
-                          type="button"
-                          className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-                          onClick={handleClose}
-                        >
-                          Anullo
-                        </button>
-                        <button
-                          type="submit"
-                          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-500"
-                        >
-                          Konfirmo shitjen
-                        </button>
-                      </div>
-                    </form>
-                  </div>
+                    {/* Error Message */}
+                    {error && (
+                      <div className="text-sm text-red-500">{error}</div>
+                    )}
+
+                    {/* Buttons */}
+                    <div className="mt-5 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+                        onClick={handleClose}
+                      >
+                        Anullo
+                      </button>
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-500"
+                      >
+                        Konfirmo shitjen
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </Dialog.Panel>

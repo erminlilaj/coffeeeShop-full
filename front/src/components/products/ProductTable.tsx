@@ -6,6 +6,7 @@ import AddProductModal from './AddProductModal';
 import PurchaseModal from './PurchaseModal';
 import SellModal from './SellModal';
 import SellMultipleModal from './SellMultipleModal'; // Import the SellMultipleModal
+import BuyMultipleModal from './BuyMultipleModal';
 import { getProducts, sellMultipleProducts } from '../../lib/api';
 
 const ProductTable: React.FC = () => {
@@ -13,7 +14,8 @@ const ProductTable: React.FC = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
-    const [isSellMultipleModalOpen, setIsSellMultipleModalOpen] = useState(false); // State for multiple sell modal
+    const [isSellMultipleModalOpen, setIsSellMultipleModalOpen] = useState(false);// State for multiple sell modal
+    const [isBuyMultipleModalOpen, setIsBuyMultipleModalOpen] = useState(false); 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
     const [error, setError] = useState('');
@@ -92,7 +94,7 @@ const ProductTable: React.FC = () => {
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    Shto Produkt
+                    Shto Produkt te cilat jane stoke
                 </button>
             </div>
 
@@ -171,14 +173,26 @@ const ProductTable: React.FC = () => {
                 </table>
             </div>
 
+
             {/* Sell Simultaneously Button */}
             <div className="p-4 border-t border-gray-200 flex justify-end">
+                <div className='px-4'>
+                <button 
+                    onClick={() => setIsBuyMultipleModalOpen(true)} // Open SellMultipleModal
+                    disabled={isProcessingSale}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm
+                     font-medium text-white bg-green-600
+                     hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {isProcessingSale ? "Processing..." : "Bli njekohesisht"}
+                </button>
+                </div>
                 <button
                     onClick={() => setIsSellMultipleModalOpen(true)} // Open SellMultipleModal
                     disabled={isProcessingSale}
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm
-                     font-medium text-white bg-red-600
-                     hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                     font-medium text-white  bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     {isProcessingSale ? "Processing..." : "Shit njekohesisht"}
@@ -211,6 +225,13 @@ const ProductTable: React.FC = () => {
                 onClose={() => setIsSellMultipleModalOpen(false)}
                 selectedProducts={selectedProducts}
                 onSell={handleSellMultiple}
+                onSellComplete={loadProducts}
+            />
+            <BuyMultipleModal
+                isOpen={isBuyMultipleModalOpen}
+                onClose={() => setIsBuyMultipleModalOpen(false)}
+                selectedProducts={selectedProducts} //rregulloje kt me backun*****
+                onPurchaseComplete={handleSellMultiple} //rregulloje kt me backun*****
                 onSellComplete={loadProducts}
             />
         </div>
