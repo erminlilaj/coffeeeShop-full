@@ -8,11 +8,16 @@
     "build": "astro build",
     "preview": "astro preview",
     "electron:start": "cross-env NODE_ENV=production npm run build && electron .",
-    "package": "npm run build && electron-packager --platform=win32 --arch=x64 --out=release-builds --overwrite --electron-version 34.2.0"
+    "package": "npm run build && electron-packager . CoffeeShopApp --platform=win32 --arch=x64 --out=release-builds --overwrite"
   },
   "devDependencies": {
-    "astro": "^5.3.0",
-    "cross-env": "^7.0.3"
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.2.0",
+    "electron-packager": "^17.1.2",
+    "openapi-typescript-codegen": "^0.29.0",
+    "rimraf": "^6.0.1",
+    "wait-on": "^7.2.0"
   },
   "dependencies": {
     "@astrojs/node": "^9.1.0",
