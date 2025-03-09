@@ -7,7 +7,7 @@ export default defineConfig({
   integrations: [tailwind(), react()],
   output: 'server',
   adapter: node({
-    mode: 'production', // Explicitly setting the mode for the node adapter
+    mode: 'standalone', // Explicitly setting the mode for the node adapter
     middleware: 'src/middleware.ts', // Ensure middleware is defined here
   }),
   base: './',
