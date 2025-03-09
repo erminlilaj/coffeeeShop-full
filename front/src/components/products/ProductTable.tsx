@@ -191,11 +191,11 @@ const ProductTable: React.FC = () => {
             <div className="p-4 border-t border-gray-200 flex justify-end">
                 <div className='px-4'>
                 <button 
-                    onClick={() => setIsBuyMultipleModalOpen(true)} // Open SellMultipleModal
-                    disabled={isProcessingSale}
+                    onClick={() => setIsBuyMultipleModalOpen(true)}
+                    disabled={isProcessingSale || selectedProducts.length === 0}
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm
                      font-medium text-white bg-green-600
-                     hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                     hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Plus className="h-4 w-4 mr-2" />
                     {isProcessingSale ? "Processing..." : "Bli njekohesisht"}
@@ -203,9 +203,9 @@ const ProductTable: React.FC = () => {
                 </div>
                 <button
                     onClick={() => setIsSellMultipleModalOpen(true)} // Open SellMultipleModal
-                    disabled={isProcessingSale}
+                    disabled={isProcessingSale || selectedProducts.length === 0}
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm
-                     font-medium text-white  bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                     font-medium text-white  bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     {isProcessingSale ? "Processing..." : "Shit njekohesisht"}
@@ -235,16 +235,28 @@ const ProductTable: React.FC = () => {
             {/* Sell Multiple Modal */}
             <SellMultipleModal
                 isOpen={isSellMultipleModalOpen}
-                onClose={() => setIsSellMultipleModalOpen(false)}
+                onClose={() => {
+                    setIsSellMultipleModalOpen(false);
+                    setSelectedProducts([]); // Clear selection when modal is closed
+                }}
                 selectedProducts={selectedProducts}
                 onSell={handleSellMultiple}
-                onSellComplete={loadProducts}
+                onSellComplete={() => {
+                    loadProducts();
+                    setSelectedProducts([]); // Also clear selection after completion
+                }}
             />
             <BuyMultipleModal
                 isOpen={isBuyMultipleModalOpen}
-                onClose={() => setIsBuyMultipleModalOpen(false)}
+                onClose={() => {
+                    setIsBuyMultipleModalOpen(false);
+                    setSelectedProducts([]); // Clear selection when modal is closed
+                }}
                 selectedProducts={selectedProducts}
-                onPurchaseComplete={loadProducts}
+                onPurchaseComplete={() => {
+                    loadProducts();
+                    setSelectedProducts([]); // Also clear selection after completion
+                }}
             />
         </div>
     );

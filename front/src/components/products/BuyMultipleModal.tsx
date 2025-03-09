@@ -2,18 +2,21 @@ import * as React from "react";
 import { useState, Fragment, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { XMarkIcon as X } from "@heroicons/react/24/outline";
-import { SellMultipleModalProps } from "../../lib/generated/models/SellMultipleModalProps";
-import { createSale } from "../../lib/api";
+import { createPurchase } from "../../lib/api";
+import { BuyMultipleModalProps } from "../../lib/generated/models/BuyMultipleModalProps";
 
-const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
+const BuyMultipleModal: React.FC<BuyMultipleModalProps> = ({
   isOpen,
   onClose,
   selectedProducts,
-  onSellComplete,
+  onPurchaseComplete,
 }) => {
   const getCurrentDate = () => new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const getCurrentTime = () => 
+    new Date().toTimeString().split(":").slice(0, 2).join(":");
 
-  const [saleDate, setSaleDate] = useState(getCurrentDate());
+  const [purchaseDate, setPurchaseDate] = useState(getCurrentDate());
+  const [purchaseTime, setPurchaseTime] = useState(getCurrentTime());
   const [updatedProducts, setUpdatedProducts] = useState(
     selectedProducts.map((product) => ({
       ...product,
@@ -32,7 +35,8 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
         error: "",
       }))
     );
-    setSaleDate(getCurrentDate());
+    setPurchaseDate(getCurrentDate());
+    setPurchaseTime(getCurrentTime());
   }, [selectedProducts]);
 
   const handleQuantityChange = (id: number, value: string) => {
@@ -49,30 +53,33 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUpdatedProducts((prev) => prev.map((item) => ({ ...item, error: "" })));
+    setUpdatedProducts((prev) =>
+      prev.map((item) => ({ ...item, error: "" }))
+    );
 
     try {
       for (const product of updatedProducts) {
         if (!product || parseInt(product.quantity) <= 0) {
-          throw new Error("Sasia është e pavlefshme");
+          throw new Error("Invalid quantity");
         }
-        await createSale({
+        await createPurchase({
           productId: product.id,
           quantity: parseInt(product.quantity),
           price: parseFloat(product.price),
-          transactionDate: saleDate,
+          transactionDate: purchaseDate,
         });
       }
-      onSellComplete();
+
+      onPurchaseComplete();
       handleClose();
     } catch (error) {
       setUpdatedProducts((prev) =>
         prev.map((item) => ({
           ...item,
-          error: "Shitja deshtoi. Ju lutem provoni perseri.",
+          error: "Blerja deshtoi. Ju lutem provoni perseri.",
         }))
       );
-      console.error("Error in sale:", error);
+      console.error("Error in purchase:", error);
     }
   };
 
@@ -85,7 +92,8 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
         error: "",
       }))
     );
-    setSaleDate(getCurrentDate());
+    setPurchaseDate(getCurrentDate());
+    setPurchaseTime(getCurrentTime());
     onClose();
   };
 
@@ -131,12 +139,12 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
               <div className="sm:flex sm:items-start">
                 <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
                   <Dialog.Title className="text-lg font-semibold text-gray-900">
-                    Shit Produktet
+                    Bli produktet
                   </Dialog.Title>
 
                   <div className="mt-4">
                     <form onSubmit={handleSubmit} className="space-y-4">
-                      {/* Scrollable container for products and date */}
+                      {/* Scrollable container for product list and date */}
                       <div className="mt-4 h-[400px] overflow-y-auto">
                         {updatedProducts.map((product) => (
                           <div key={product.id}>
@@ -186,7 +194,7 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
                             </div>
 
                             <div className="mt-2 text-sm text-gray-600">
-                              Totali i shitjes:{" "}
+                              Totali:{" "}
                               {(
                                 parseFloat(product.price) *
                                 parseInt(product.quantity)
@@ -202,26 +210,44 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
                           </div>
                         ))}
 
-                        {/* Sale Date Field (INSIDE SCROLL CONTAINER) */}
+                        {/* Purchase Date Field */}
                         <div>
                           <label
-                            htmlFor="saleDate"
+                            htmlFor="purchaseDate"
                             className="block text-sm font-medium text-gray-700"
                           >
-                            Data e shitjes
+                            Data e blerjes
                           </label>
                           <input
                             type="date"
-                            id="saleDate"
-                            value={saleDate}
-                            onChange={(e) => setSaleDate(e.target.value)}
+                            id="purchaseDate"
+                            value={purchaseDate}
+                            onChange={(e) => setPurchaseDate(e.target.value)}
+                            className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            required
+                          />
+                        </div>
+                        
+                        {/* Purchase Time Field */}
+                        <div>
+                          <label
+                            htmlFor="purchaseTime"
+                            className="block text-sm font-medium text-gray-700"
+                          >
+                            Koha e blerjes
+                          </label>
+                          <input
+                            type="time"
+                            id="purchaseTime"
+                            value={purchaseTime}
+                            onChange={(e) => setPurchaseTime(e.target.value)}
                             className="mt-1 w-full rounded-lg border border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             required
                           />
                         </div>
                       </div>
 
-                      {/* Buttons (OUTSIDE SCROLL CONTAINER) */}
+                      {/* Buttons outside the scroll container */}
                       <div className="mt-5 flex justify-end gap-3">
                         <button
                           type="button"
@@ -234,7 +260,7 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
                           type="submit"
                           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-500"
                         >
-                          Konfirmo shitjen
+                          Konfirmo blerjen
                         </button>
                       </div>
                     </form>
@@ -249,4 +275,4 @@ const SellMultipleModal: React.FC<SellMultipleModalProps> = ({
   );
 };
 
-export default SellMultipleModal;
+export default BuyMultipleModal;
